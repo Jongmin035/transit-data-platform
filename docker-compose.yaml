@@ -1,0 +1,30 @@
+services:
+  postgres:
+    image: postgres:latest
+    environment:
+      POSTGRES_USER: jongmin
+      POSTGRES_PASSWORD: ${MY_DB_PASSWORD}
+      POSTGRES_DB: sandbox_db
+    networks:
+      - isolated
+    volumes:
+      - pg_data:/var/lib/postgresql
+
+  bastion:
+    image: alpine:latest
+    command: sh -c "apk add --no-cache socat && socat TCP-LISTEN:5433,fork,reuseaddr TCP:postgres:5432"
+    ports:
+      - "5433:5433"
+    networks:
+      - default
+      - isolated
+    depends_on:
+      - postgres
+
+networks:
+  isolated:
+    internal: true
+
+volumes:
+  pg_data:
+    driver: local

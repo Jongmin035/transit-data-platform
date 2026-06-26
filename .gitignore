@@ -1,0 +1,21 @@
+# Local Database Storage (Just in case)
+**/pg_data/
+.postgres_data/
+
+# Sensitive Environment & Credentials
+.env
+*.env.*
+.aws/
+credentials
+*.pem
+
+# Terraform Infrastructure Files (Crucial for Step 1A)
+.terraform/
+*.tfstate
+*.tfstate.backup
+.terraform.lock.hcl
+crash.log
+
+# Operating System Files
+.DS_Store
+Thumbs.db
