@@ -12,6 +12,9 @@ credentials
 # Terraform Infrastructure Files (Crucial for Step 1A)
 .terraform/
 *.tfstate
+*.tfstate.*
+*.tfvars
+*.tfvars.*
 *.tfstate.backup
 .terraform.lock.hcl
 crash.log
