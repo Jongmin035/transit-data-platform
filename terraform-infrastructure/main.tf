@@ -1,4 +1,13 @@
 terraform {
+    backend "s3" {
+        bucket         = "jh-transit-s3-backend-bucket"
+        key            = "terraform/state"
+        region        = "us-east-1"
+        profile        = "data-eng"
+        encrypt        = true
+        use_lockfile   = true
+    }
+
     required_providers {
         aws = {
             source      = "hashicorp/aws"
