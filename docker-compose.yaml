@@ -9,6 +9,72 @@ services:
       - isolated
     volumes:
       - pg_data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U jongmin -d sandbox_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+  
+  airflow-webserver:
+    image: apache/airflow:latest
+    environment:
+      AIRFLOW__CORE__EXECUTOR: LocalExecutor
+      AIRFLOW__CORE__AUTH_MANAGER: airflow.providers.fab.auth_manager.fab_auth_manager.FabAuthManager
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://jongmin:${MY_DB_PASSWORD}@postgres:5432/sandbox_db
+    command: ["airflow", "api-server"]
+    ports:
+      - "8080:8080"
+    networks:
+      - default
+      - isolated
+    volumes:
+      - ./dags:/opt/airflow/dags
+    depends_on:
+      postgres:
+        condition: service_healthy
+      airflow-init:
+        condition: service_completed_successfully
+  
+  airflow-scheduler:
+    image: apache/airflow:latest
+    environment:
+      AIRFLOW__CORE__EXECUTOR: LocalExecutor
+      AIRFLOW__CORE__AUTH_MANAGER: airflow.providers.fab.auth_manager.fab_auth_manager.FabAuthManager
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://jongmin:${MY_DB_PASSWORD}@postgres:5432/sandbox_db
+    command: ["airflow", "scheduler"]
+    networks:
+      - isolated
+    volumes:
+      - ./dags:/opt/airflow/dags
+    depends_on:
+      postgres:
+        condition: service_healthy
+      airflow-init:
+        condition: service_completed_successfully
+  
+  airflow-init:
+    image: apache/airflow:latest
+    environment:
+      AIRFLOW__CORE__EXECUTOR: LocalExecutor
+      AIRFLOW__CORE__AUTH_MANAGER: airflow.providers.fab.auth_manager.fab_auth_manager.FabAuthManager
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://jongmin:${MY_DB_PASSWORD}@postgres:5432/sandbox_db
+    command:
+      - bash
+      - -c
+      - |
+        airflow db migrate
+        airflow users create \
+          --username admin \
+          --firstname Jongmin \
+          --lastname Hwang \
+          --role Admin \
+          --email ${AIRFLOW_EMAIL} \
+          --password ${AIRFLOW_PASSWORD}
+    networks:
+      - isolated
+    depends_on:
+      postgres:
+        condition: service_healthy
 
   bastion:
     image: alpine:latest
