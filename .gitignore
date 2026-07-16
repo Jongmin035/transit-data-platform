@@ -22,3 +22,10 @@ crash.log
 # Operating System Files
 .DS_Store
 Thumbs.db
+
+# Logs
+logs/*
+
+# pycache
+dags/__pycache__/*
+dags/data/*

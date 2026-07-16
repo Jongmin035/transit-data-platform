@@ -20,6 +20,8 @@ services:
     environment:
       AIRFLOW__CORE__EXECUTOR: LocalExecutor
       AIRFLOW__CORE__AUTH_MANAGER: airflow.providers.fab.auth_manager.fab_auth_manager.FabAuthManager
+      AIRFLOW__CORE__EXECUTION_API_SERVER_URL: 'http://airflow-webserver:8080/execution/'
+      AIRFLOW__API_AUTH__JWT_SECRET: ${MY_JWT_SECRET}
       AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://jongmin:${MY_DB_PASSWORD}@postgres:5432/sandbox_db
     command: ["airflow", "api-server"]
     ports:
@@ -29,6 +31,7 @@ services:
       - isolated
     volumes:
       - ./dags:/opt/airflow/dags
+      - ./logs:/opt/airflow/logs
     depends_on:
       postgres:
         condition: service_healthy
@@ -40,23 +43,50 @@ services:
     environment:
       AIRFLOW__CORE__EXECUTOR: LocalExecutor
       AIRFLOW__CORE__AUTH_MANAGER: airflow.providers.fab.auth_manager.fab_auth_manager.FabAuthManager
+      AIRFLOW__CORE__EXECUTION_API_SERVER_URL: 'http://airflow-webserver:8080/execution/'
+      AIRFLOW__API_AUTH__JWT_SECRET: ${MY_JWT_SECRET}
       AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://jongmin:${MY_DB_PASSWORD}@postgres:5432/sandbox_db
     command: ["airflow", "scheduler"]
     networks:
+      - default
       - isolated
     volumes:
       - ./dags:/opt/airflow/dags
+      - ./logs:/opt/airflow/logs
     depends_on:
       postgres:
         condition: service_healthy
       airflow-init:
         condition: service_completed_successfully
+
+  airflow-dag-processor:
+      image: apache/airflow:latest
+      environment:
+        AIRFLOW__CORE__EXECUTOR: LocalExecutor
+        AIRFLOW__CORE__AUTH_MANAGER: airflow.providers.fab.auth_manager.fab_auth_manager.FabAuthManager
+        AIRFLOW__CORE__EXECUTION_API_SERVER_URL: 'http://airflow-webserver:8080/execution/'
+        AIRFLOW__API_AUTH__JWT_SECRET: ${MY_JWT_SECRET}
+        AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://jongmin:${MY_DB_PASSWORD}@postgres:5432/sandbox_db
+      command: ["airflow", "dag-processor"]
+      networks:
+        - default
+        - isolated
+      volumes:
+        - ./dags:/opt/airflow/dags
+        - ./logs:/opt/airflow/logs
+      depends_on:
+        postgres:
+          condition: service_healthy
+        airflow-init:
+          condition: service_completed_successfully
   
   airflow-init:
     image: apache/airflow:latest
     environment:
       AIRFLOW__CORE__EXECUTOR: LocalExecutor
       AIRFLOW__CORE__AUTH_MANAGER: airflow.providers.fab.auth_manager.fab_auth_manager.FabAuthManager
+      AIRFLOW__CORE__EXECUTION_API_SERVER_URL: 'http://airflow-webserver:8080/execution/'
+      AIRFLOW__API_AUTH__JWT_SECRET: ${MY_JWT_SECRET}
       AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://jongmin:${MY_DB_PASSWORD}@postgres:5432/sandbox_db
     command:
       - bash
