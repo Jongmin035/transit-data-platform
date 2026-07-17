@@ -17,6 +17,8 @@ services:
   
   airflow-webserver:
     image: apache/airflow:latest
+    env_file:
+      - .env
     environment:
       AIRFLOW__CORE__EXECUTOR: LocalExecutor
       AIRFLOW__CORE__AUTH_MANAGER: airflow.providers.fab.auth_manager.fab_auth_manager.FabAuthManager
@@ -40,12 +42,15 @@ services:
   
   airflow-scheduler:
     image: apache/airflow:latest
+    env_file:
+      - .env
     environment:
       AIRFLOW__CORE__EXECUTOR: LocalExecutor
       AIRFLOW__CORE__AUTH_MANAGER: airflow.providers.fab.auth_manager.fab_auth_manager.FabAuthManager
       AIRFLOW__CORE__EXECUTION_API_SERVER_URL: 'http://airflow-webserver:8080/execution/'
       AIRFLOW__API_AUTH__JWT_SECRET: ${MY_JWT_SECRET}
       AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://jongmin:${MY_DB_PASSWORD}@postgres:5432/sandbox_db
+      AWS_PROFILE: data-eng
     command: ["airflow", "scheduler"]
     networks:
       - default
@@ -53,6 +58,7 @@ services:
     volumes:
       - ./dags:/opt/airflow/dags
       - ./logs:/opt/airflow/logs
+      - ~/.aws:/home/airflow/.aws:ro
     depends_on:
       postgres:
         condition: service_healthy
@@ -61,12 +67,15 @@ services:
 
   airflow-dag-processor:
       image: apache/airflow:latest
+      env_file:
+        - .env
       environment:
         AIRFLOW__CORE__EXECUTOR: LocalExecutor
         AIRFLOW__CORE__AUTH_MANAGER: airflow.providers.fab.auth_manager.fab_auth_manager.FabAuthManager
         AIRFLOW__CORE__EXECUTION_API_SERVER_URL: 'http://airflow-webserver:8080/execution/'
         AIRFLOW__API_AUTH__JWT_SECRET: ${MY_JWT_SECRET}
         AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://jongmin:${MY_DB_PASSWORD}@postgres:5432/sandbox_db
+        AWS_PROFILE: data-eng
       command: ["airflow", "dag-processor"]
       networks:
         - default
@@ -74,6 +83,7 @@ services:
       volumes:
         - ./dags:/opt/airflow/dags
         - ./logs:/opt/airflow/logs
+        - ~/.aws:/home/airflow/.aws:ro
       depends_on:
         postgres:
           condition: service_healthy
@@ -82,6 +92,8 @@ services:
   
   airflow-init:
     image: apache/airflow:latest
+    env_file:
+      - .env
     environment:
       AIRFLOW__CORE__EXECUTOR: LocalExecutor
       AIRFLOW__CORE__AUTH_MANAGER: airflow.providers.fab.auth_manager.fab_auth_manager.FabAuthManager
