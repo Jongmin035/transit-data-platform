@@ -7,7 +7,19 @@ import pendulum
 from botocore.exceptions import NoCredentialsError, ClientError
 
 BUCKET_NAME = os.getenv("S3_BUCKET_ARN")
-CTA_API_KEY = os.getenv("CTA_API_KEY")
+
+def get_ssm_parameter(parameter_name: str) -> str:
+    session = boto3.Session(profile_name='data-eng')
+    ssm_client = session.client('ssm')
+
+    try:
+        response = ssm_client.get_parameter(
+            Name=parameter_name,
+            WithDecryption=True
+        )
+        return response['Parameter']['Value']
+    except ClientError as e:
+        raise RuntimeError(f"Failed to retrieve {parameter_name} from SSM: {e}")
 
 @dag(
     dag_id="cta_vehicle_data_to_s3",
@@ -19,9 +31,10 @@ CTA_API_KEY = os.getenv("CTA_API_KEY")
 def cta_vehicle_data_to_s3():
     @task(retries=3)
     def extract_cta_data():
+        cta_key = get_ssm_parameter("/transit/cta_api_key")
         url = f"https://www.ctabustracker.com/bustime/api/v3/getvehicles"
         params = {
-            "key": CTA_API_KEY,
+            "key": cta_key,
             "rt": "20,56,66,72",
             "format": "json"
         }
