@@ -14,7 +14,57 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
-  
+
+  spark-master:
+    image: apache/spark:latest
+    container_name: spark-master
+    command: "/opt/spark/bin/spark-class org.apache.spark.deploy.master.Master"
+    environment:
+      - SPARK_MASTER_HOST=0.0.0.0
+      - SPARK_MASTER_PORT=7077
+      - SPARK_MASTER_WEBUI_PORT=8081
+    ports:
+      - "7077:7077"
+      - "8081:8081"
+    networks:
+      - isolated
+      - default
+    volumes:
+      - ./dags:/opt/spark-apps
+
+  spark-worker:
+    image: apache/spark:latest
+    container_name: spark-worker-1
+    command: "/opt/spark/bin/spark-class org.apache.spark.deploy.worker.Worker spark://spark-master:7077"
+    environment:
+      - SPARK_WORKER_CORES=2
+      - SPARK_WORKER_MEMORY=2g
+      - SPARK_WORKER_WEBUI_PORT=8081
+    depends_on:
+      - spark-master
+    networks:
+      - isolated
+    volumes:
+      - ./dags:/opt/spark-apps
+
+  jupyter-local:
+    build: .
+    command: python -m jupyterlab --ip "0.0.0.0" --no-browser --NotebookApp.token='' --allow-root
+    environment:
+      SPARK_DRIVER_BIND_ADDRESS: 0.0.0.0
+      SPARK_DRIVER_HOST: jupyter-local
+      SPARK_DRIVER_PORT: 29200
+    expose:
+      - 29200
+    ports:
+      - 8888:8888
+      - 4040:4040
+    networks:
+      - isolated
+      - default
+    volumes:
+      - ./dags:/opt/spark-apps
+
   airflow-webserver:
     image: apache/airflow:latest
     env_file:
@@ -39,7 +89,7 @@ services:
         condition: service_healthy
       airflow-init:
         condition: service_completed_successfully
-  
+
   airflow-scheduler:
     image: apache/airflow:latest
     env_file:
@@ -53,7 +103,6 @@ services:
       AWS_PROFILE: data-eng
     command: ["airflow", "scheduler"]
     networks:
-      - default
       - isolated
     volumes:
       - ./dags:/opt/airflow/dags
@@ -66,30 +115,29 @@ services:
         condition: service_completed_successfully
 
   airflow-dag-processor:
-      image: apache/airflow:latest
-      env_file:
-        - .env
-      environment:
-        AIRFLOW__CORE__EXECUTOR: LocalExecutor
-        AIRFLOW__CORE__AUTH_MANAGER: airflow.providers.fab.auth_manager.fab_auth_manager.FabAuthManager
-        AIRFLOW__CORE__EXECUTION_API_SERVER_URL: 'http://airflow-webserver:8080/execution/'
-        AIRFLOW__API_AUTH__JWT_SECRET: ${MY_JWT_SECRET}
-        AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://jongmin:${MY_DB_PASSWORD}@postgres:5432/sandbox_db
-        AWS_PROFILE: data-eng
-      command: ["airflow", "dag-processor"]
-      networks:
-        - default
-        - isolated
-      volumes:
-        - ./dags:/opt/airflow/dags
-        - ./logs:/opt/airflow/logs
-        - ~/.aws:/home/airflow/.aws:ro
-      depends_on:
-        postgres:
-          condition: service_healthy
-        airflow-init:
-          condition: service_completed_successfully
-  
+    image: apache/airflow:latest
+    env_file:
+      - .env
+    environment:
+      AIRFLOW__CORE__EXECUTOR: LocalExecutor
+      AIRFLOW__CORE__AUTH_MANAGER: airflow.providers.fab.auth_manager.fab_auth_manager.FabAuthManager
+      AIRFLOW__CORE__EXECUTION_API_SERVER_URL: 'http://airflow-webserver:8080/execution/'
+      AIRFLOW__API_AUTH__JWT_SECRET: ${MY_JWT_SECRET}
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://jongmin:${MY_DB_PASSWORD}@postgres:5432/sandbox_db
+      AWS_PROFILE: data-eng
+    command: ["airflow", "dag-processor"]
+    networks:
+      - isolated
+    volumes:
+      - ./dags:/opt/airflow/dags
+      - ./logs:/opt/airflow/logs
+      - ~/.aws:/home/airflow/.aws:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+      airflow-init:
+        condition: service_completed_successfully
+
   airflow-init:
     image: apache/airflow:latest
     env_file:
