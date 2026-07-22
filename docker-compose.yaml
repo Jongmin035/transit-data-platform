@@ -104,6 +104,7 @@ services:
     command: ["airflow", "scheduler"]
     networks:
       - isolated
+      - default
     volumes:
       - ./dags:/opt/airflow/dags
       - ./logs:/opt/airflow/logs
@@ -128,6 +129,7 @@ services:
     command: ["airflow", "dag-processor"]
     networks:
       - isolated
+      - default
     volumes:
       - ./dags:/opt/airflow/dags
       - ./logs:/opt/airflow/logs
@@ -162,6 +164,7 @@ services:
           --password ${AIRFLOW_PASSWORD}
     networks:
       - isolated
+      - default
     depends_on:
       postgres:
         condition: service_healthy
