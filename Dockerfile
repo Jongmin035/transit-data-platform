@@ -4,6 +4,8 @@ FROM apache/spark:latest as jupyter-local
 USER root
 RUN ln -sf /usr/bin/python3 /usr/bin/python
 
+ENV PYTHONPATH="${SPARK_HOME}/python:${SPARK_HOME}/python/lib/py4j-0.10.9.7-src.zip:${PYTHONPATH}"
+
 # Copy and install workspace dependencies
 COPY requirements.txt requirements.txt
 RUN pip install --no-cache-dir -r requirements.txt

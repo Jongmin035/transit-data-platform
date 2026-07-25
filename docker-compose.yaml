@@ -18,6 +18,7 @@ services:
   spark-master:
     image: apache/spark:latest
     container_name: spark-master
+    user: root
     command: "/opt/spark/bin/spark-class org.apache.spark.deploy.master.Master"
     environment:
       - SPARK_MASTER_HOST=0.0.0.0
@@ -35,6 +36,7 @@ services:
   spark-worker:
     image: apache/spark:latest
     container_name: spark-worker-1
+    user: root
     command: "/opt/spark/bin/spark-class org.apache.spark.deploy.worker.Worker spark://spark-master:7077"
     environment:
       - SPARK_WORKER_CORES=2

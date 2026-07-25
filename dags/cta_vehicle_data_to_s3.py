@@ -23,7 +23,7 @@ def get_ssm_parameter(parameter_name: str) -> str:
 
 @dag(
     dag_id="cta_vehicle_data_to_s3",
-    schedule="0 */2 * * *",
+    schedule="0 */1 * * *",
     start_date=pendulum.datetime(2026, 7, 1),
     catchup=False,
     tags=["production"]
