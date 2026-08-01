@@ -29,3 +29,8 @@ logs/*
 # pycache
 dags/__pycache__/*
 dags/data/*
+
+# Checkpoints and Python Compiled files
+*checkpoint.py
+*checkpoint.ipynb
+*.pyc

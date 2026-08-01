@@ -14,6 +14,7 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+      start_period: 30s
 
   spark-master:
     image: apache/spark:latest
@@ -51,6 +52,8 @@ services:
 
   jupyter-local:
     build: .
+    env_file:
+      - .env
     command: python -m jupyterlab --ip "0.0.0.0" --no-browser --NotebookApp.token='' --allow-root
     environment:
       SPARK_DRIVER_BIND_ADDRESS: 0.0.0.0
@@ -66,9 +69,12 @@ services:
       - default
     volumes:
       - ./dags:/opt/spark-apps
+      - ~/.aws:/root/.aws:ro
 
   airflow-webserver:
-    image: apache/airflow:latest
+    build:
+      context: .
+      dockerfile: Dockerfile.airflow
     env_file:
       - .env
     environment:
@@ -77,6 +83,7 @@ services:
       AIRFLOW__CORE__EXECUTION_API_SERVER_URL: 'http://airflow-webserver:8080/execution/'
       AIRFLOW__API_AUTH__JWT_SECRET: ${MY_JWT_SECRET}
       AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://jongmin:${MY_DB_PASSWORD}@postgres:5432/sandbox_db
+      _PIP_ADDITIONAL_REQUIREMENTS: "pyspark==3.5.0 boto3 pendulum"
     command: ["airflow", "api-server"]
     ports:
       - "8080:8080"
@@ -93,7 +100,9 @@ services:
         condition: service_completed_successfully
 
   airflow-scheduler:
-    image: apache/airflow:latest
+    build:
+      context: .
+      dockerfile: Dockerfile.airflow
     env_file:
       - .env
     environment:
@@ -102,7 +111,10 @@ services:
       AIRFLOW__CORE__EXECUTION_API_SERVER_URL: 'http://airflow-webserver:8080/execution/'
       AIRFLOW__API_AUTH__JWT_SECRET: ${MY_JWT_SECRET}
       AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://jongmin:${MY_DB_PASSWORD}@postgres:5432/sandbox_db
+      _PIP_ADDITIONAL_REQUIREMENTS: "pyspark==3.5.0 boto3 pendulum"
       AWS_PROFILE: data-eng
+      S3_BUCKET_ARN: ${S3_BUCKET_ARN}
+      JAVA_HOME: /usr/lib/jvm/default-java
     command: ["airflow", "scheduler"]
     networks:
       - isolated
@@ -118,7 +130,9 @@ services:
         condition: service_completed_successfully
 
   airflow-dag-processor:
-    image: apache/airflow:latest
+    build:
+      context: .
+      dockerfile: Dockerfile.airflow
     env_file:
       - .env
     environment:
@@ -127,7 +141,9 @@ services:
       AIRFLOW__CORE__EXECUTION_API_SERVER_URL: 'http://airflow-webserver:8080/execution/'
       AIRFLOW__API_AUTH__JWT_SECRET: ${MY_JWT_SECRET}
       AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://jongmin:${MY_DB_PASSWORD}@postgres:5432/sandbox_db
+      _PIP_ADDITIONAL_REQUIREMENTS: "pyspark==3.5.0 boto3 pendulum"
       AWS_PROFILE: data-eng
+      S3_BUCKET_ARN: ${S3_BUCKET_ARN}
     command: ["airflow", "dag-processor"]
     networks:
       - isolated
@@ -143,7 +159,9 @@ services:
         condition: service_completed_successfully
 
   airflow-init:
-    image: apache/airflow:latest
+    build:
+      context: .
+      dockerfile: Dockerfile.airflow
     env_file:
       - .env
     environment:
@@ -152,6 +170,7 @@ services:
       AIRFLOW__CORE__EXECUTION_API_SERVER_URL: 'http://airflow-webserver:8080/execution/'
       AIRFLOW__API_AUTH__JWT_SECRET: ${MY_JWT_SECRET}
       AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://jongmin:${MY_DB_PASSWORD}@postgres:5432/sandbox_db
+      _PIP_ADDITIONAL_REQUIREMENTS: "pyspark==3.5.0 boto3 pendulum"
     command:
       - bash
       - -c
