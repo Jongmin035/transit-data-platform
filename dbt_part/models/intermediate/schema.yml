@@ -1,0 +1,28 @@
+version: 2
+
+models:
+  - name: int_vehicle_delay_events
+    columns:
+      - name: vehicle_id
+        data_tests:
+          - not_null
+
+      - name: current_state
+        data_tests:
+          - not_null
+          - accepted_values:
+              values: [true, false]
+
+      - name: curr_timestamp
+        data_tests:
+          - not_null
+          - relationships:
+              to: source('raw', 'cta_vehicle_positions')
+              field: event_timestamp
+
+      - name: previous_timestamp
+        data_tests:
+          - not_null
+          - relationships:
+              to: source('raw', 'cta_vehicle_positions')
+              field: event_timestamp

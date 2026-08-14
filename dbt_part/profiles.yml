@@ -1,0 +1,13 @@
+cta_dbt_project:
+  target: dev
+  outputs:
+    dev:
+      type: postgres
+      host: 127.0.0.1
+      port: 5433
+      user: jongmin
+      password: "{{ env_var('MY_DB_PASSWORD') }}"
+      dbname: sandbox_db
+      schema: analytics
+      threads: 4
+      keepalives_idle: 0

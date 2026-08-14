@@ -34,3 +34,11 @@ dags/data/*
 *checkpoint.py
 *checkpoint.ipynb
 *.pyc
+
+# venv
+*.venv*
+
+target/
+dbt_packages/
+
+dbt_part/logs*

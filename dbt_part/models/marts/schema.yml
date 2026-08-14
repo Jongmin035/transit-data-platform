@@ -1,0 +1,19 @@
+version: 2
+
+models:
+  - name: fct_vehicle_delay_counts
+    columns:
+      - name: vehicle_id
+        data_tests:
+          - not_null
+          - relationships:
+              to: ref('int_vehicle_delay_events')
+              field: vehicle_id
+
+  - name: fct_vehicle_delay_durations
+    columns:
+      - name: delay_duration_category
+        data_tests:
+          - not_null
+          - accepted_values:
+              values: ['Short', 'Medium', 'Long']

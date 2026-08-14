@@ -1,0 +1,1 @@
+SELECT * FROM {{ source('raw', 'cta_vehicle_positions') }}

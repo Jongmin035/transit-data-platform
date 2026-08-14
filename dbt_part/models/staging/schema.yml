@@ -1,0 +1,10 @@
+version: 2
+
+models:
+  - name: stg_cta_vehicle_positions
+    description: "Lightly cleaned staging view directly reading from raw CTA vehicle position source."
+    columns:
+      - name: vehicle_id
+        description: "Unique identifier for each CTA transit vehicle."
+        data_tests:
+          - not_null
